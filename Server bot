@@ -1,0 +1,121 @@
+var token = '949738186:AAHiAWmk3C2uvsHJA_hEILHV2aDyuUMEGfI';
+var telegramUrl = "https://api.telegram.org/bot"+token;
+var webAppUrl = "https://script.google.com/macros/s/AKfycbwfwVry7b8NIi86X4nh5idCREpFQjg1npAt53UeAku6Fp4pcZpY/exec";
+ 
+ 
+//ini untuk mengaktifkan Server Bot nya
+function setWebhook(){
+  var url = telegramUrl+"/setWebhook?url="+webAppUrl;
+  var response =   UrlFetchApp.fetch(url);
+  
+  Logger.log(response.getContentText())
+}
+ 
+ 
+function doPost(e){
+  //masukan id google sheet tempat dimana menyimpan data inventarisir barang sekolah
+var ss = SpreadsheetApp.openById("10YhT-WYO2YOtV18ykLXhNhyfWErkoGfQFdmb66dKgiQ");
+  
+  
+  var contents = JSON.parse(e.postData.contents);
+  
+  //variabel text digunakan untuk menyimpan text yang dikirim oleh user
+  var text = contents.message.text;
+  //variabel yang digunakan untuk menyimpan id percakapan dari user user yang berbeda
+  var id = contents.message.chat.id;
+  
+  //varibel arrayText ini untuk menyimpan text dengan dipisah dengan spasi
+  var arrayText = text.split(" ");
+  
+  
+  //memberi respon jika kata pertama adalah "cek" dan kata kedua adalah "laptop" 
+  if(arrayText[0].toLowerCase()=="cek" && arrayText[1].toLowerCase() == "laptop"){
+    var sheet = ss.getSheetByName("laptop");
+    var rangeData = sheet.getDataRange().getValues();
+    var jumlahKolom = sheet.getLastColumn();
+    
+    var barang = "";
+    for(var row = 1; row<rangeData.length;row++){
+    
+      barang = barang +"\n"+ rangeData[row][0] +"\n"  //nama barang
+      +rangeData[0][1]+" : "+rangeData[row][1]+"\n"   //kode barang
+      +rangeData[0][2]+" : "+rangeData[row][2]+"\n"   //status
+      ;
+       
+    }
+    
+    var pesan = barang;
+    kirimPesan(id,pesan,"markdown");
+  }
+  //memberi respon jika kata pertama adalah "peminjaman" dan kata kedua adalah "laptop"
+  else if(arrayText[0].toLowerCase()=="peminjaman" && arrayText[1].toLowerCase() == "laptop"){
+    
+     var sheet = ss.getSheetByName("peminjaman_laptop");
+     var rangeData = sheet.getDataRange().getValues();
+     var jumlahKolom = sheet.getLastColumn();
+    
+    var barang = "";
+    for(var row = 1; row<rangeData.length;row++){
+      barang = barang +"\n"+ rangeData[row][0] +"\n"  //nama barang
+      +rangeData[0][1]+" : "+rangeData[row][1]+"\n"   //kode barang
+      +rangeData[0][2]+" : "+rangeData[row][2]+"\n"   //peminjaman
+      +rangeData[0][3]+" : "+rangeData[row][3]+"\n"   //tanggal pinjam 
+      +rangeData[0][4]+" : "+rangeData[row][4]+"\n"   //tanggal kembali
+      ;
+    }
+    
+    var pesan = barang;
+    kirimPesan(id,pesan,"markdown");
+  }
+  else{    
+    var pesan= "*Selamat datang di Bot Inventarisir barang \n SMKN 2 Karanganyar* \n"
+    +"Adapun menu yang disediakan layanan ini antara lain : \n"
+    +"*a.mengecek barang* \n"
+    +"ketik : cek namaBarang \n"
+    +"*Contoh :* cek laptop \n"
+    +"*b.cek peminjaman barang* \n"
+    +"ketik : peminjaman namaBarang \n"
+    +"*Contoh :* peminjaman laptop \n"
+    ;
+    kirimPesan(id,pesan,"markdown");
+  }
+ 
+}
+ 
+ 
+ 
+ 
+ 
+//fungsi yang digunakan untuk mengirim pesan ke user
+function kirimPesan(chatid, pesan, parse_mode, disable_web_page_preview, reply_markup) {
+  var formData = {
+     'chat_id': chatid,
+     'text': pesan
+  };
+  
+  if ( (typeof parse_mode !== 'undefined') || (typeof parse_mode !== false) || (typeof parse_mode !== null) )  {
+    formData['parse_mode'] = parse_mode;
+  }
+  
+  if ( (typeof disable_web_page_preview !== 'undefined') || (typeof disable_web_page_preview !== null) )  {
+    formData['disable_web_page_preview'] = disable_web_page_preview;
+  }
+  
+  if ( (typeof reply_markup !== 'undefined') || (typeof reply_markup !== null) )  {
+    formData['reply_markup'] = reply_markup;
+  }
+ 
+  var ret = request('sendMessage', formData);
+  return ret;
+}
+ 
+ 
+function request(method, data) {
+  var url = "https://api.telegram.org/bot"+token+"/"+method;
+  var options = {
+    "method" : "post",
+    "payload" : data
+  };
+  
+  UrlFetchApp.fetch(url,options);
+}
